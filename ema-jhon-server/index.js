@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 require("dotenv").config();
-const port = 7000;
+const port = 4000;
 
 app.use(cors());
 app.use(express.json());
@@ -16,6 +16,7 @@ const client = new MongoClient(uri, {
 
 client.connect((err) => {
   const productsCollection = client.db("emaJhonStore").collection("products");
+  const ordersCollection = client.db("emaJhonStore").collection("orders");
 
   app.post("/addProducts", (req, res) => {
     const product = req.body;
@@ -34,7 +35,6 @@ client.connect((err) => {
 
   app.get("/product/:key",(req,res)=>{
     const productKey=req.params.key;
-    console.log(productKey);
     productsCollection.find({key:productKey})
     .toArray((err,document)=>{
       res.send(document[0])
@@ -42,18 +42,24 @@ client.connect((err) => {
    
   })
 
-  // app.post('/productByKey',(req,res)=>{
-  //   const productByKey=req.body
-  //   productsCollection.find({key:{$in:productByKey}})
-  //   .toArray((err,document)=>{
-  //     res.send(document)
-  //   })
-
-  // })
-
-  app.get('/',(req,res)=>{
-    res.send("Hello")
+  app.post('/productsByKeys',(req,res)=>{
+    const productKeys= req.body;
+    productsCollection.find({key: {$in:productKeys}})
+    .toArray((err,document)=>{
+      res.send( document)
+    })
   })
+
+
+  app.post("/addOrder", (req, res) => {
+    const order = req.body;
+    ordersCollection.insertOne(order)
+    .then((result) => {
+      res.send(result.insertedCount > 0);
+    });
+  });
+
+
 
 });
 
